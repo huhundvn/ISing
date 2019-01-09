@@ -1,6 +1,9 @@
 package nqt.com.ising;
 
+import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.view.View;
@@ -13,8 +16,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import nqt.com.ising.utils.CheckNetWorkConnection;
+import nqt.com.ising.utils.CheckPermission;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private CheckNetWorkConnection mCheckNetWorkConnection;
+    private CheckPermission mCheckPermission;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +49,20 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        mCheckNetWorkConnection = new CheckNetWorkConnection(this);
+        mCheckPermission = new CheckPermission(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!mCheckNetWorkConnection.isConnectNetwork()) {
+            mCheckNetWorkConnection.showWarningNoInternet();
+        }
+        if (!mCheckPermission.checkPermission(Manifest.permission.RECORD_AUDIO)) {
+            mCheckPermission.requestPermission(Manifest.permission.RECORD_AUDIO);
+        }
     }
 
     @Override
@@ -65,10 +88,19 @@ public class MainActivity extends AppCompatActivity
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id) {
+            case R.id.action_search_text:
+                break;
+            case R.id.action_search_voice:
+                Intent recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE,"vn");
+                recognizerIntent.putExtra(
+                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH
+                );
+                recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+                startActivityForResult(recognizerIntent, 101);
+                break;
         }
 
         return super.onOptionsItemSelected(item);
